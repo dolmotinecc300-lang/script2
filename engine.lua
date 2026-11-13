@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local cfg = _G.cfg
@@ -73,7 +74,17 @@ end
 LocalPlayer.CharacterAdded:Connect(function(c) task.wait(1); local h = c:FindFirstChild("Humanoid"); if h then h.WalkSpeed = cfg.Speed end end)
 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = cfg.Speed end
 
+UserInputService.JumpRequest:Connect(function()
+    if cfg.InfJump then
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
 RunService.RenderStepped:Connect(function()
+    -- Аим
     if cfg.Aim and cfg.Bind then
         local b, bd = nil, cfg.Fov
         local c = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
@@ -105,6 +116,7 @@ RunService.RenderStepped:Connect(function()
         if b then Camera.CFrame = CFrame.new(Camera.CFrame.Position, b.Position) end
     end
 
+    -- ESP и ники
     local myChar = LocalPlayer.Character
     local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
 
