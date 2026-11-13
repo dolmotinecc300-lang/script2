@@ -83,7 +83,76 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
+-- AUTO PUNCH
+local autoPunchCooldown = 0
+local function tryAutoPunch()
+    if not cfg.AutoPunch then return end
+    if tick() - autoPunchCooldown < 0.6 then return end -- Задержка удара
+    
+    local char = LocalPlayer.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            local theirRoot = p.Character:FindFirstChild("HumanoidRootPart")
+            local hum = p.Character:FindFirstChild("Humanoid")
+            if theirRoot and hum and hum.Health > 0 then
+                if (theirRoot.Position - root.Position).Magnitude <= 6 then -- Радиус удара
+                    local tool = char:FindFirstChildOfClass("Tool")
+                    if tool then
+                        -- Имитация клика мышью по игроку
+                        pcall(function()
+                            tool:Activate()
+                        end)
+                        autoPunchCooldown = tick()
+                    end
+                    break
+                end
+            end
+        end
+    end
+end
+
+-- INFINITE AMMO (Авто-перезарядка)
+local reloadCooldown = 0
+local function tryInfiniteAmmo()
+    if not cfg.InfAmmo then return end
+    if tick() - reloadCooldown < 0.5 then return end
+    
+    local char = LocalPlayer.Character
+    if not char then return end
+    local tool = char:FindFirstChildOfClass("Tool")
+    
+    if tool then
+        local ammo = tool:GetAttribute("Local_CurrentAmmo")
+        local maxAmmo = tool:GetAttribute("MaxAmmo")
+        
+        if ammo and maxAmmo and ammo <= 0 then
+            -- Эмуляция нажатия R (перезарядка)
+            local reloadEvent = game:GetService("ReplicatedStorage"):FindFirstChild("GunRemotes")
+            if reloadEvent and reloadEvent:FindFirstChild("ReloadEvent") then
+                pcall(function()
+                    reloadEvent.ReloadEvent:FireServer()
+                end)
+            else
+                -- Если нет ремоута, пробуем через клавишу (работает не везде)
+                pcall(function()
+                    tool:Activate() -- Иногда заставляет перезарядиться
+                end)
+            end
+            reloadCooldown = tick()
+        end
+    end
+end
+
 RunService.RenderStepped:Connect(function()
+    -- Auto Punch
+    if cfg.AutoPunch then tryAutoPunch() end
+    -- Inf Ammo
+    if cfg.InfAmmo then tryInfiniteAmmo() end
+
     -- Аим
     if cfg.Aim and cfg.Bind then
         local b, bd = nil, cfg.Fov
